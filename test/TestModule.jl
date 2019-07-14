@@ -33,13 +33,34 @@ struct FatherType
     f2::ChildType
     f3::Vector{Int}
     f4::BSONObjectId
+    f5::Symbol
 end
 
 function Base.:(==)(f1::FatherType, f2::FatherType)
     return (f1.f1 == f2.f1
             && f1.f2 == f2.f2
             && f1.f3 == f2.f3
-            && f1.f4 == f2.f4)
+            && f1.f4 == f2.f4
+            && f1.f5 == f2.f5)
+end
+
+struct ManyDicts
+    d1::Dict{Symbol, Date}
+end
+
+function Base.:(==)(m1::ManyDicts, m2::ManyDicts)
+    return compare_dict_contents(m1.d1, m2.d1)
+end
+
+function compare_dict_contents(d1::Dict, d2::Dict)
+    function comp_left_to_right(a::Dict, b::Dict)
+        for (k,v) in a
+            !haskey(b, k) && return false
+            b[k] != v && return false
+        end
+        return true
+    end
+    comp_left_to_right(d1, d2) && comp_left_to_right(d2, d1)
 end
 
 end # TestModule
