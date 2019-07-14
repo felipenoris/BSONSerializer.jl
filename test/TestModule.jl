@@ -2,6 +2,7 @@
 module TestModule
 
 using Dates
+using Mongoc: BSONObjectId
 
 struct ChildType
     c1::String
@@ -31,12 +32,14 @@ struct FatherType
     f1::String
     f2::ChildType
     f3::Vector{Int}
+    f4::BSONObjectId
 end
 
 function Base.:(==)(f1::FatherType, f2::FatherType)
     return (f1.f1 == f2.f1
             && f1.f2 == f2.f2
-            && f1.f3 == f2.f3)
+            && f1.f3 == f2.f3
+            && f1.f4 == f2.f4)
 end
 
 end # TestModule

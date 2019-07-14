@@ -1,8 +1,7 @@
 
 module BSONSerializer
 
-import Mongoc
-import Mongoc.BSON
+using Mongoc: BSON, BSONObjectId
 
 using Dates
 
@@ -28,12 +27,7 @@ function deserialize(bson::BSON, mod::Module=Main)
     return deserialize(bson, Serializable{datatype})
 end
 
-const NATIVE_BSON_DATATYPE = Union{String, Int32, Int64, DateTime, Float64, Bool}
-
-# default implementation: call `encode` on concrete values
-function encode(val::Expr, ::Type{T}) where {T}
-    Expr(:call, :encode, val)
-end
+const NATIVE_BSON_DATATYPE = Union{String, Int32, Int64, DateTime, Float64, Bool, BSONObjectId}
 
 function encode(val::T) where {T<:NATIVE_BSON_DATATYPE}
     val
@@ -63,12 +57,17 @@ end
 # don't touch this
 function codegen_serialize(expr, datatype::DataType) :: Expr
 
+    # call `encode` on concrete values
+    function encode_expr(val::Expr, ::Type{T}) where {T}
+        Expr(:call, :encode, val)
+    end
+
     # returns expression:
     # "fieldname" => val.val.fieldname
     function field_value_pair_expr(nm::Symbol, ::Type{T}) :: Expr where {T}
         # val.val.fieldname
         val_expr = Expr(:., Expr(:., :val, QuoteNode(:val)), QuoteNode(nm))
-        enc = encode(val_expr, T)
+        enc = encode_expr(val_expr, T)
         Expr(:call, :(=>), "$nm", enc)
     end
 
@@ -83,11 +82,6 @@ function codegen_serialize(expr, datatype::DataType) :: Expr
             return BSON("type" => $expr_str, "args" => BSON($field_value_pairs...))
         end
    end
-end
-
-# default implementation: call `decode` on concrete values
-function decode(val::Expr, ::Type{T}) where {T}
-    Expr(:call, :decode, val, T)
 end
 
 function decode(val::T, ::Type{T}) where {T<:NATIVE_BSON_DATATYPE}
@@ -109,10 +103,15 @@ end
 # don't touch this
 function codegen_deserialize(expr, datatype::DataType) :: Expr
 
+    # call `decode` on concrete values
+    function decode_expr(val::Expr, ::Type{T}) where {T}
+        Expr(:call, :decode, val, T)
+    end
+
     function arg_expr(nm::Symbol, ::Type{T}) :: Expr where {T}
         nm_str = "$nm"
         val_expr = Expr(:ref, :args, nm_str)
-        return decode(val_expr, T)
+        return decode_expr(val_expr, T)
     end
 
     arg_list = Expr(:tuple,

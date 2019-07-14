@@ -1,7 +1,7 @@
 
 using Test, Dates
 
-import Mongoc.BSON
+using Mongoc: BSON, BSONObjectId
 using BSONSerializer
 
 include("TestModule.jl")
@@ -53,10 +53,13 @@ end
         Dates.today(),
         [Date(2019, 1, 1), Date(2019, 1, 2)])
 
+    oid = BSONObjectId()
+
     father_instance = TestModule.FatherType(
         "Hello from father",
         child_instance,
-        [1, 2, 3])
+        [1, 2, 3],
+        oid)
 
     bson = BSONSerializer.serialize(father_instance)
     #println(bson)
@@ -78,6 +81,7 @@ end
     @test child_args["c7"] == DateTime(Dates.today())
     @test child_args["c8"] == child_args["c7"]
     @test child_args["c9"] == [ DateTime(Date(2019, 1, 1)), DateTime(Date(2019, 1, 2)) ]
+    @test args["f4"] == oid
 
     new_father_instance = BSONSerializer.deserialize(bson)
     @test new_father_instance == father_instance
