@@ -82,3 +82,7 @@ end
     new_father_instance = BSONSerializer.deserialize(bson)
     @test new_father_instance == father_instance
 end
+
+@testset "Usage" begin
+    include("usage.jl")
+end
