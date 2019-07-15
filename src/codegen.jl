@@ -100,7 +100,8 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
             encode_type(::Type{$datatype}) = BSON
         end)
 
-        #println(expr_deserialize_method)
+        println("DEBUG: deserialize generated code:")
+        println(expr_deserialize_method)
         eval(expr_deserialize_method)
         eval(quote
             decode(val::Union{BSON, Dict}, ::Type{$datatype}) = deserialize(val, Serializable{$datatype})

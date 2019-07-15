@@ -73,12 +73,10 @@ encode_type(::Type{Symbol}) = String
 #
 # Nothing / Missing
 #
-#=
 function decode(val::T, ::Type{Union{Nothing, T}}) where {T}
-    println("called decode on union{Nothing, T}")
+    println("DEBUG: called decode on union{Nothing, T}")
     decode(val, T)
 end
-=#
 
 #
 # DatePeriod and TimePeriod are encoded as Int
