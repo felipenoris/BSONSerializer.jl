@@ -15,17 +15,6 @@ function encode_round_trip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
 end
 
-function compare_dict_contents(d1::Dict, d2::Dict)
-    function comp_left_to_right(a::Dict, b::Dict)
-        for (k,v) in a
-            !haskey(b, k) && return false
-            b[k] != v && return false
-        end
-        return true
-    end
-    comp_left_to_right(d1, d2) && comp_left_to_right(d2, d1)
-end
-
 @testset "encode" begin
     let
         d = Dict{String, Int}("a" => 1, "b" => 2)

@@ -49,18 +49,7 @@ struct ManyDicts
 end
 
 function Base.:(==)(m1::ManyDicts, m2::ManyDicts)
-    return compare_dict_contents(m1.d1, m2.d1)
-end
-
-function compare_dict_contents(d1::Dict, d2::Dict)
-    function comp_left_to_right(a::Dict, b::Dict)
-        for (k,v) in a
-            !haskey(b, k) && return false
-            b[k] != v && return false
-        end
-        return true
-    end
-    comp_left_to_right(d1, d2) && comp_left_to_right(d2, d1)
+    return m1.d1 == m2.d1
 end
 
 end # TestModule
