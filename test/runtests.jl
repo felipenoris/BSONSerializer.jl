@@ -10,6 +10,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.ManyDicts)
 @BSONSerializable(TestModule.Periods)
 @BSONSerializable(TestModule.SingletonStruct)
+@BSONSerializable(TestModule.Option)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
@@ -123,8 +124,15 @@ end
         instance = TestModule.SingletonStruct()
         new_instance = BSONSerializer.roundtrip(instance)
         @test new_instance == instance
-        println(BSONSerializer.encode(instance))
     end
+
+#=
+    @testset "Option" begin
+        instance = TestModule.Option(1)
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
+=#
 end
 
 @testset "Usage" begin

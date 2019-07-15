@@ -65,4 +65,8 @@ end
 struct SingletonStruct
 end
 
+struct Option
+    val::Union{Nothing, Int}
+end
+
 end # TestModule
