@@ -44,21 +44,25 @@ function Base.:(==)(f1::FatherType, f2::FatherType)
             && f1.f5 == f2.f5)
 end
 
-struct ManyDicts
-    d1::Dict{Symbol, Date}
-    d2::Dict{Int, Year}
-end
-
-function Base.:(==)(m1::ManyDicts, m2::ManyDicts)
-    return m1.d1 == m2.d1
-end
-
 struct Periods
     y::Year
     m::Month
     d::Day
     hh::Hour
     mm::Minute
+end
+
+struct ManyDicts
+    d1::Dict{Symbol, Date}
+    d2::Dict{Int, Year}
+    d3::Dict{Int, Periods}
+end
+
+function Base.:(==)(m1::ManyDicts, m2::ManyDicts)
+    return m1.d1 == m2.d1 && m1.d2 == m2.d2 && m1.d3 == m2.d3
+end
+
+struct SingletonStruct
 end
 
 end # TestModule

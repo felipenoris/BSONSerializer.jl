@@ -97,6 +97,7 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
         eval(expr_serialize_method)
         eval(quote
             encode(val::$datatype) = serialize(Serializable(val))
+            encode_type(::Type{$datatype}) = BSON
         end)
 
         #println(expr_deserialize_method)

@@ -103,7 +103,7 @@ function decode_dict_key(key::String, ::Type{T}) where {T<:Integer}
 end
 
 function encode(val::Dict{K,V}) where {K,V}
-    encoded_dict = Dict{String,encode_type(V)}()
+    encoded_dict = Dict{String, encode_type(V)}()
     for (k,v) in val
         encoded_dict[encode_dict_key(k)] = encode(v)
     end

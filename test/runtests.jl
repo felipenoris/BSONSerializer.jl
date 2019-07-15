@@ -9,6 +9,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.FatherType)
 @BSONSerializable(TestModule.ManyDicts)
 @BSONSerializable(TestModule.Periods)
+@BSONSerializable(TestModule.SingletonStruct)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
@@ -103,18 +104,26 @@ end
         @test new_father_instance == father_instance
     end
 
-    @testset "ManyDicts" begin
-        instance = TestModule.ManyDicts(
-            Dict(:today => Dates.today(), :tomorrow => (Dates.today() + Dates.Day(1))),
-            Dict(1 => Year(2000), 2 => Year(2001)))
-        new_instance = BSONSerializer.roundtrip(instance)
-        @test new_instance == instance
-    end
-
     @testset "Periods" begin
         instance = TestModule.Periods(Year(2000), Month(12), Day(20), Hour(23), Minute(59))
         new_instance = BSONSerializer.roundtrip(instance)
         @test new_instance == instance
+    end
+
+    @testset "ManyDicts" begin
+        instance = TestModule.ManyDicts(
+            Dict(:today => Dates.today(), :tomorrow => (Dates.today() + Dates.Day(1))),
+            Dict(1 => Year(2000), 2 => Year(2001)),
+            Dict(1 => TestModule.Periods(Year(2000), Month(10), Day(1), Hour(20), Minute(20))))
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
+
+    @testset "SingletonStruct" begin
+        instance = TestModule.SingletonStruct()
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+        println(BSONSerializer.encode(instance))
     end
 end
 
