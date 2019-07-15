@@ -2,6 +2,8 @@
 # Returns a vector of tuples (nm, t),
 # where nm is a Symbol for field name, and t a DataType.
 function nametypetuples(t::DataType)
+    @nospecialize t
+
     _fieldnames = fieldnames(t)
     _fieldtypes = fieldtypes(t)
     @assert length(_fieldnames) == length(_fieldtypes)
@@ -10,19 +12,19 @@ end
 
 # don't touch this
 function codegen_serialize(expr, datatype::DataType) :: Expr
-
-    # call `encode` on concrete values
-    function encode_expr(val::Expr, ::Type{T}) where {T}
-        Expr(:call, :encode, val)
-    end
+    @nospecialize expr datatype
 
     # returns expression:
     # "fieldname" => val.val.fieldname
-    function field_value_pair_expr(nm::Symbol, ::Type{T}) :: Expr where {T}
+    function field_value_pair_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
         # val.val.fieldname
         val_expr = Expr(:., Expr(:., :val, QuoteNode(:val)), QuoteNode(nm))
-        enc = encode_expr(val_expr, T)
-        Expr(:call, :(=>), "$nm", enc)
+
+        # encode(val.val.fieldname)
+        encode_expr = Expr(:call, :encode, val_expr)
+
+        # "fieldname" => val.val.fieldname
+        Expr(:call, :(=>), "$nm", encode_expr)
     end
 
     # "f1" => val.val.1, "f2" => val.val.f2, ...
@@ -40,16 +42,13 @@ end
 
 # don't touch this
 function codegen_deserialize(expr, datatype::DataType) :: Expr
+    @nospecialize expr datatype
 
-    # call `decode` on concrete values
-    function decode_expr(val::Expr, ::Type{T}) where {T}
-        Expr(:call, :decode, val, T)
-    end
-
-    function arg_expr(nm::Symbol, ::Type{T}) :: Expr where {T}
+    function arg_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
         nm_str = "$nm"
         val_expr = Expr(:ref, :args, nm_str)
-        return decode_expr(val_expr, T)
+        decode_expr = Expr(:call, :decode, val_expr, T)
+        return decode_expr
     end
 
     arg_list = Expr(:tuple,
@@ -64,9 +63,11 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
     end
 end
 
-is_type_reference(mod, s::Symbol) = isa(mod.eval(s), DataType)
+is_type_reference(@nospecialize(mod), s::Symbol) = isa(mod.eval(s), DataType)
 
 function is_type_reference(callee_module::Module, expr::Expr)
+    @nospecialize callee_module expr
+
     # let's go slowly, because we're going to eval some expressions...
     if expr.head == :. && length(expr.args) == 2
         possibly_module_name = expr.args[1]
@@ -85,6 +86,8 @@ function is_type_reference(callee_module::Module, expr::Expr)
 end
 
 macro BSONSerializable(expr::Union{Expr, Symbol})
+    @nospecialize expr
+
     #println("macro input: $expr, type $(typeof(expr))")
 
     if is_type_reference(__module__, expr)
