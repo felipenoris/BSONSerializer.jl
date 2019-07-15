@@ -8,17 +8,16 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.ChildType)
 @BSONSerializable(TestModule.FatherType)
 @BSONSerializable(TestModule.ManyDicts)
+@BSONSerializable(TestModule.Periods)
 
-serialize_round_trip(v) = BSONSerializer.deserialize(BSONSerializer.serialize(v))
-
-function encode_round_trip(v::T) where {T}
+function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
 end
 
 @testset "encode" begin
     let
         d = Dict{String, Int}("a" => 1, "b" => 2)
-        new_d = encode_round_trip(d)
+        new_d = encode_roundtrip(d)
         @test new_d == d
     end
 end
@@ -105,8 +104,16 @@ end
     end
 
     @testset "ManyDicts" begin
-        instance = TestModule.ManyDicts(Dict(:today => Dates.today(), :tomorrow => (Dates.today() + Dates.Day(1))))
-        new_instance = serialize_round_trip(instance)
+        instance = TestModule.ManyDicts(
+            Dict(:today => Dates.today(), :tomorrow => (Dates.today() + Dates.Day(1))),
+            Dict(1 => Year(2000), 2 => Year(2001)))
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
+
+    @testset "Periods" begin
+        instance = TestModule.Periods(Year(2000), Month(12), Day(20), Hour(23), Minute(59))
+        new_instance = BSONSerializer.roundtrip(instance)
         @test new_instance == instance
     end
 end

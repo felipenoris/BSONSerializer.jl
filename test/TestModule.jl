@@ -46,10 +46,19 @@ end
 
 struct ManyDicts
     d1::Dict{Symbol, Date}
+    d2::Dict{Int, Year}
 end
 
 function Base.:(==)(m1::ManyDicts, m2::ManyDicts)
     return m1.d1 == m2.d1
+end
+
+struct Periods
+    y::Year
+    m::Month
+    d::Day
+    hh::Hour
+    mm::Minute
 end
 
 end # TestModule

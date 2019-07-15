@@ -71,6 +71,22 @@ decode(val::String, ::Type{Symbol}) = Symbol(val)
 encode_type(::Type{Symbol}) = String
 
 #
+# DatePeriod and TimePeriod are encoded as Int
+#
+
+function encode(val::T) where {T<:Union{DatePeriod, TimePeriod}}
+    val.value
+end
+
+function decode(val::Int, ::Type{T}) where {T<:Union{DatePeriod, TimePeriod}}
+    T(val)
+end
+
+function encode_type(::Type{T}) where {T<:Union{DatePeriod, TimePeriod}}
+    Int
+end
+
+#
 # Dictionaries with String as symbols are natively supported by BSON.
 # Edge case might fail: when V is an abstract type.
 #
