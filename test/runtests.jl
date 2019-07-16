@@ -12,6 +12,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.SingletonStruct)
 @BSONSerializable(TestModule.Option)
 @BSONSerializable(TestModule.DateEncodedAsString)
+@BSONSerializable(TestModule.Submodule.SubStruct)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
@@ -146,6 +147,12 @@ end
 }
 """)
         new_instance = BSONSerializer.deserialize(bson_with_str)
+        @test new_instance == instance
+    end
+
+    @testset "Submodule" begin
+        instance = TestModule.Submodule.SubStruct(1)
+        new_instance = BSONSerializer.roundtrip(instance)
         @test new_instance == instance
     end
 end
