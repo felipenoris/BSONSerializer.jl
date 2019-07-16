@@ -11,6 +11,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.Periods)
 @BSONSerializable(TestModule.SingletonStruct)
 @BSONSerializable(TestModule.Option)
+@BSONSerializable(TestModule.DateEncodedAsString)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
@@ -133,6 +134,20 @@ end
         @test new_instance == instance
     end
 =#
+
+    @testset "DateEncodedAsString" begin
+        instance = TestModule.DateEncodedAsString(Date(2019,12,25))
+        bson_with_str = BSON("""
+{
+    "type" : "TestModule.DateEncodedAsString",
+    "args" : {
+        "date" : "2019-12-25"
+    }
+}
+""")
+        new_instance = BSONSerializer.deserialize(bson_with_str)
+        @test new_instance == instance
+    end
 end
 
 @testset "Usage" begin

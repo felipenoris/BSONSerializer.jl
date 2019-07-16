@@ -40,9 +40,10 @@ end
 
 encode(val::Date) = DateTime(val)
 
-function decode(val::DateTime, ::Type{Date})
-    Date(val)
-end
+decode(val::DateTime, ::Type{Date}) = Date(val)
+
+# accept String with standard format "yyyy-mm-dd"
+decode(val::String, ::Type{Date}) = Date(val)
 
 encode_type(::Type{Date}) = DateTime
 

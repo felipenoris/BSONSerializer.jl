@@ -69,4 +69,8 @@ struct Option
     val::Union{Nothing, Int}
 end
 
+struct DateEncodedAsString
+    date::Date
+end
+
 end # TestModule
