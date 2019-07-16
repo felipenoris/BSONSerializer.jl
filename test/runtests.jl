@@ -13,6 +13,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.Option)
 @BSONSerializable(TestModule.DateEncodedAsString)
 @BSONSerializable(TestModule.Submodule.SubStruct)
+@BSONSerializable(TestModule.Parametric, true)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
@@ -155,6 +156,13 @@ end
         new_instance = BSONSerializer.roundtrip(instance)
         @test new_instance == instance
     end
+#=
+    @testset "Parametric" begin
+        instance = TestModule.Parametric(:symbol)
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
+=#
 end
 
 @testset "Usage" begin

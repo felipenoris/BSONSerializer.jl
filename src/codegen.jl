@@ -1,7 +1,7 @@
 
 # Returns a vector of tuples (nm, t),
-# where nm is a Symbol for field name, and t a DataType.
-function nametypetuples(t::DataType)
+# where nm is a Symbol for field name, and t a Type.
+function nametypetuples(t::DATATYPE_OR_UNIONALL)
     @nospecialize t
 
     _fieldnames = fieldnames(t)
@@ -11,7 +11,7 @@ function nametypetuples(t::DataType)
 end
 
 # don't touch this
-function codegen_serialize(expr, datatype::DataType) :: Expr
+function codegen_serialize(expr, datatype::DATATYPE_OR_UNIONALL) :: Expr
     @nospecialize expr datatype
 
     # returns expression:
@@ -41,7 +41,7 @@ function codegen_serialize(expr, datatype::DataType) :: Expr
 end
 
 # don't touch this
-function codegen_deserialize(expr, datatype::DataType) :: Expr
+function codegen_deserialize(expr, datatype::DATATYPE_OR_UNIONALL) :: Expr
     @nospecialize expr datatype
 
     function arg_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
@@ -64,8 +64,8 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
 end
 
 function is_type_reference(@nospecialize(m), s::Symbol; debug::Bool=false) :: Bool
-    result = isa(m.eval(s), DataType)
-    debug && !result && @info("is_type_reference: symbol $s is not a DataType.")
+    result = isa(m.eval(s), DATATYPE_OR_UNIONALL)
+    debug && !result && @info("is_type_reference: symbol $s is not a $(DATATYPE_OR_UNIONALL).")
     return result
 end
 
@@ -102,8 +102,8 @@ function is_type_reference(caller_module::Module, expr::Expr; debug::Bool=false)
             if isa(type_owner_module, Module)
                 if is_type_name(possibly_type_name)
                     eval_result = caller_module.eval(expr)
-                    result = isa(eval_result, DataType)
-                    debug && !result && @info("$expr::$(typeof(eval_result)) is not a DataType on $caller_module.")
+                    result = isa(eval_result, DATATYPE_OR_UNIONALL)
+                    debug && !result && @info("$expr::$(typeof(eval_result)) is not a $(DATATYPE_OR_UNIONALL) on $caller_module.")
                     return result
                 else
                     debug && @info("$possibly_type_name is not a type name")
@@ -124,22 +124,22 @@ end
 macro BSONSerializable(expr::Union{Expr, Symbol}, debug::Bool=false)
     @nospecialize expr
 
-    #println("macro input: $expr, type $(typeof(expr))")
+    debug && println("macro input: $expr, type $(typeof(expr))")
 
     if is_type_reference(__module__, expr, debug=debug)
-        #println("$expr is a type reference.")
+        debug && println("$expr is a type reference.")
         datatype = __module__.eval(expr)
         expr_serialize_method = codegen_serialize(expr, datatype)
         expr_deserialize_method = codegen_deserialize(expr, datatype)
 
-        #println(expr_serialize_method)
+        debug && println(expr_serialize_method)
         __module__.eval(expr_serialize_method)
         __module__.eval(quote
             BSONSerializer.encode(val::$datatype) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
             BSONSerializer.encode_type(::Type{$datatype}) = BSON
         end)
 
-        #println(expr_deserialize_method)
+        debug && println(expr_deserialize_method)
         __module__.eval(expr_deserialize_method)
         __module__.eval(quote
             BSONSerializer.decode(val::Union{BSONSerializer.BSON, Dict}, ::Type{$datatype}) = BSONSerializer.deserialize(val, BSONSerializer.Serializable{$datatype})
