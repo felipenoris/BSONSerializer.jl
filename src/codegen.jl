@@ -63,10 +63,19 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
     end
 end
 
-is_type_reference(@nospecialize(mod), s::Symbol) = isa(mod.eval(s), DataType)
+function is_type_reference(@nospecialize(m), s::Symbol; debug::Bool=false) :: Bool
+    result = isa(m.eval(s), DataType)
+    debug && !result && @info("is_type_reference: symbol $s is not a DataType.")
+    return result
+end
 
-function is_type_reference(caller_module::Module, expr::Expr)
+function is_type_reference(caller_module::Module, expr::Expr; debug::Bool=false) :: Bool
     @nospecialize caller_module expr
+
+    if debug
+        @info("is_type_reference: input:")
+        dump(expr)
+    end
 
     is_module_name(expr::Symbol) = true
     is_module_name(expr::QuoteNode) = is_module_name(expr.value)
@@ -83,7 +92,8 @@ function is_type_reference(caller_module::Module, expr::Expr)
     is_type_name(other) = false
 
     # let's go slowly, because we're going to eval some expressions...
-    if expr.head == :. && length(expr.args) == 2
+    if expr.head == :.
+        @assert length(expr.args) == 2
         possibly_module_name = expr.args[1]
         possibly_type_name = expr.args[2]
 
@@ -91,20 +101,32 @@ function is_type_reference(caller_module::Module, expr::Expr)
             type_owner_module = caller_module.eval(possibly_module_name)
             if isa(type_owner_module, Module)
                 if is_type_name(possibly_type_name)
-                    return isa(caller_module.eval(expr), DataType)
+                    eval_result = caller_module.eval(expr)
+                    result = isa(eval_result, DataType)
+                    debug && !result && @info("$expr::$(typeof(eval_result)) is not a DataType on $caller_module.")
+                    return result
+                else
+                    debug && @info("$possibly_type_name is not a type name")
                 end
+            else
+                debug && @info("$possibly_module_name evaluated to $(typeof(type_owner_module))")
             end
+        else
+            debug && @info("$possibly_module_name is not a module name.")
         end
+    else
+        debug && @info("expression head was not `.`")
     end
+
     return false
 end
 
-macro BSONSerializable(expr::Union{Expr, Symbol})
+macro BSONSerializable(expr::Union{Expr, Symbol}, debug::Bool=false)
     @nospecialize expr
 
     #println("macro input: $expr, type $(typeof(expr))")
 
-    if is_type_reference(__module__, expr)
+    if is_type_reference(__module__, expr, debug=debug)
         #println("$expr is a type reference.")
         datatype = __module__.eval(expr)
         expr_serialize_method = codegen_serialize(expr, datatype)
