@@ -115,7 +115,7 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
         __module__.eval(expr_serialize_method)
         __module__.eval(quote
             BSONSerializer.encode(val::$datatype) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
-            BSONSerializer.encode_type(::Type{$datatype}) = BSON
+            BSONSerializer.encode_type(::Type{$datatype}) = BSONSerializer.BSON
         end)
 
         #println(expr_deserialize_method)

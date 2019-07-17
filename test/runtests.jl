@@ -29,6 +29,8 @@ end
 
 @testset "serialize structs" begin
     @testset "ChildType" begin
+        @test BSONSerializer.encode_type(TestModule.ChildType) == BSON
+
         instance = TestModule.ChildType(
             "Hello from ChildType",
             101,
