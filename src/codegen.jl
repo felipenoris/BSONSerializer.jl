@@ -63,7 +63,7 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
     end
 end
 
-is_type_reference(@nospecialize(mod), s::Symbol) = isa(mod.eval(s), DataType)
+is_type_reference(@nospecialize(m), s::Symbol) = isa(m.eval(s), DataType)
 
 function is_type_reference(caller_module::Module, expr::Expr)
     @nospecialize caller_module expr
@@ -83,7 +83,8 @@ function is_type_reference(caller_module::Module, expr::Expr)
     is_type_name(other) = false
 
     # let's go slowly, because we're going to eval some expressions...
-    if expr.head == :. && length(expr.args) == 2
+    if expr.head == :.
+        @assert length(expr.args) == 2
         possibly_module_name = expr.args[1]
         possibly_type_name = expr.args[2]
 
