@@ -12,6 +12,8 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.SingletonStruct)
 @BSONSerializable(TestModule.Option)
 @BSONSerializable(TestModule.DateEncodedAsString)
+@BSONSerializable(TestModule.Submodule.SubStruct)
+@BSONSerializable(TestModule.StructFloat)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
@@ -147,6 +149,26 @@ end
 """)
         new_instance = BSONSerializer.deserialize(bson_with_str)
         @test new_instance == instance
+    end
+
+    @testset "Submodule" begin
+        instance = TestModule.Submodule.SubStruct(1)
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
+
+    @testset "decode Int as Float" begin
+        bson = BSON("""
+{
+    "type" : "TestModule.StructFloat",
+    "args" : {
+        "val" : 10
+    }
+}
+""")
+        new_instance = BSONSerializer.deserialize(bson)
+        @test new_instance.val == 10
+        @test isa(new_instance.val, Float64)
     end
 end
 

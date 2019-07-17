@@ -73,4 +73,14 @@ struct DateEncodedAsString
     date::Date
 end
 
+module Submodule
+    struct SubStruct
+        val::Int
+    end
+end
+
+struct StructFloat
+    val::Float64
+end
+
 end # TestModule

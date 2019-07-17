@@ -20,10 +20,10 @@ function codegen_serialize(expr, datatype::DataType) :: Expr
         # val.val.fieldname
         val_expr = Expr(:., Expr(:., :val, QuoteNode(:val)), QuoteNode(nm))
 
-        # encode(val.val.fieldname)
-        encode_expr = Expr(:call, :encode, val_expr)
+        # BSONSerializer.encode(val.val.fieldname)
+        encode_expr = Expr(:call, Expr(:., :BSONSerializer, QuoteNode(:encode)), val_expr)
 
-        # "fieldname" => val.val.fieldname
+        # "fieldname" => BSONSerializer.encode(val.val.fieldname)
         Expr(:call, :(=>), "$nm", encode_expr)
     end
 
@@ -34,8 +34,8 @@ function codegen_serialize(expr, datatype::DataType) :: Expr
     expr_str = "$expr"
 
     quote
-        function serialize(val::Serializable{$datatype})
-            return BSON("type" => $expr_str, "args" => BSON($field_value_pairs...))
+        function BSONSerializer.serialize(val::BSONSerializer.Serializable{$datatype})
+            return BSONSerializer.BSON("type" => $expr_str, "args" => BSONSerializer.BSON($field_value_pairs...))
         end
    end
 end
@@ -47,7 +47,7 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
     function arg_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
         nm_str = "$nm"
         val_expr = Expr(:ref, :args, nm_str)
-        decode_expr = Expr(:call, :decode, val_expr, T)
+        decode_expr = Expr(:call, Expr(:., :BSONSerializer, QuoteNode(:decode)), val_expr, T)
         return decode_expr
     end
 
@@ -56,28 +56,43 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
 
     expr_str = "$expr"
     quote
-        function deserialize(bson::Union{BSON, Dict}, ::Type{Serializable{$datatype}})
+        function BSONSerializer.deserialize(bson::Union{BSONSerializer.BSON, Dict}, ::Type{BSONSerializer.Serializable{$datatype}})
             args = bson["args"]
             ($datatype)($arg_list...)
         end
     end
 end
 
-is_type_reference(@nospecialize(mod), s::Symbol) = isa(mod.eval(s), DataType)
+is_type_reference(@nospecialize(m), s::Symbol) = isa(m.eval(s), DataType)
 
-function is_type_reference(callee_module::Module, expr::Expr)
-    @nospecialize callee_module expr
+function is_type_reference(caller_module::Module, expr::Expr)
+    @nospecialize caller_module expr
+
+    is_module_name(expr::Symbol) = true
+    is_module_name(expr::QuoteNode) = is_module_name(expr.value)
+    is_module_name(other) = false
+    function is_module_name(expr::Expr)
+        if expr.head == :.
+            @assert length(expr.args) == 2
+            return is_module_name(expr.args[1]) && is_module_name(expr.args[2])
+        end
+    end
+
+    is_type_name(expr::Symbol) = true
+    is_type_name(expr::QuoteNode) = is_type_name(expr.value)
+    is_type_name(other) = false
 
     # let's go slowly, because we're going to eval some expressions...
-    if expr.head == :. && length(expr.args) == 2
+    if expr.head == :.
+        @assert length(expr.args) == 2
         possibly_module_name = expr.args[1]
         possibly_type_name = expr.args[2]
 
-        if isa(possibly_module_name, Symbol)
-            type_owner_module = callee_module.eval(possibly_module_name)
+        if is_module_name(possibly_module_name)
+            type_owner_module = caller_module.eval(possibly_module_name)
             if isa(type_owner_module, Module)
-                if isa(possibly_type_name, QuoteNode) && isa(possibly_type_name.value, Symbol)
-                    return isa(callee_module.eval(expr), DataType)
+                if is_type_name(possibly_type_name)
+                    return isa(caller_module.eval(expr), DataType)
                 end
             end
         end
@@ -97,16 +112,16 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
         expr_deserialize_method = codegen_deserialize(expr, datatype)
 
         #println(expr_serialize_method)
-        eval(expr_serialize_method)
-        eval(quote
-            encode(val::$datatype) = serialize(Serializable(val))
-            encode_type(::Type{$datatype}) = BSON
+        __module__.eval(expr_serialize_method)
+        __module__.eval(quote
+            BSONSerializer.encode(val::$datatype) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
+            BSONSerializer.encode_type(::Type{$datatype}) = BSON
         end)
 
         #println(expr_deserialize_method)
-        eval(expr_deserialize_method)
-        eval(quote
-            decode(val::Union{BSON, Dict}, ::Type{$datatype}) = deserialize(val, Serializable{$datatype})
+        __module__.eval(expr_deserialize_method)
+        __module__.eval(quote
+            BSONSerializer.decode(val::Union{BSONSerializer.BSON, Dict}, ::Type{$datatype}) = BSONSerializer.deserialize(val, BSONSerializer.Serializable{$datatype})
         end)
 
         return
