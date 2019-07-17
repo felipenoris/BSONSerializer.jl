@@ -79,12 +79,4 @@ module Submodule
     end
 end
 
-struct Parametric{C}
-    sym::Symbol
-end
-
-function Parametric(sym::Symbol)
-    Parametric{sym}(sym)
-end
-
 end # TestModule
