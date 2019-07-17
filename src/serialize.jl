@@ -7,7 +7,7 @@ function serialize(val::Serializable{T}) where {T}
     error("Call @BSONSerializable($T) to generate serialize code for $T.")
 end
 
-function deserialize(bson::BSON, mod::Module=Main)
+function deserialize(bson::Union{BSON, Dict}, mod::Module=Main)
     @assert haskey(bson, "type") && haskey(bson, "args")
     datatype = mod.eval(Meta.parse(bson["type"]))
     @assert isa(datatype, DataType)
