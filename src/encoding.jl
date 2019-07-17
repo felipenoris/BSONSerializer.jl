@@ -35,6 +35,14 @@ function encode_type(::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
 end
 
 #
+# Integers can be decoded to Float64
+#
+
+function decode(val::Integer, ::Type{Float64})
+    Float64(val)
+end
+
+#
 # Date is encoded as DateTime with zeroed Time
 #
 
