@@ -34,6 +34,7 @@ struct FatherType
     f3::Vector{Int}
     f4::BSONObjectId
     f5::Symbol
+    f6::Char
 end
 
 function Base.:(==)(f1::FatherType, f2::FatherType)
@@ -41,7 +42,8 @@ function Base.:(==)(f1::FatherType, f2::FatherType)
             && f1.f2 == f2.f2
             && f1.f3 == f2.f3
             && f1.f4 == f2.f4
-            && f1.f5 == f2.f5)
+            && f1.f5 == f2.f5
+            && f1.f6 == f2.f6)
 end
 
 struct Periods

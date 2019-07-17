@@ -80,6 +80,13 @@ decode(val::String, ::Type{Symbol}) = Symbol(val)
 encode_type(::Type{Symbol}) = String
 
 #
+# Char is encoded as String
+#
+encode(val::Char) = string(val)
+decode(val::String, ::Type{Char}) = val[1]
+encode_type(::Type{Char}) = String
+
+#
 # Nothing / Missing
 #
 #=

@@ -79,7 +79,8 @@ end
             child_instance,
             [1, 2, 3],
             oid,
-            :sym)
+            :sym,
+            '∈')
 
         bson = BSONSerializer.serialize(father_instance)
         #println(bson)
@@ -103,6 +104,7 @@ end
         @test child_args["c9"] == [ DateTime(Date(2019, 1, 1)), DateTime(Date(2019, 1, 2)) ]
         @test args["f4"] == oid
         @test args["f5"] == "sym"
+        @test args["f6"] == "∈"
 
         new_father_instance = BSONSerializer.deserialize(bson)
         @test new_father_instance == father_instance
