@@ -79,4 +79,8 @@ module Submodule
     end
 end
 
+struct StructFloat
+    val::Float64
+end
+
 end # TestModule
