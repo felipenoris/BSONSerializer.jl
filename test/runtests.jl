@@ -40,7 +40,8 @@ end
             Int16(-12),
             DateTime(Dates.today()),
             Dates.today(),
-            [Date(2019, 1, 1), Date(2019, 1, 2)])
+            [Date(2019, 1, 1), Date(2019, 1, 2)],
+            UInt32(12))
 
         bson = BSONSerializer.serialize(instance)
         #println(bson)
@@ -57,6 +58,7 @@ end
         @test args["c8"] == args["c7"]
         @test isa(args["c8"], DateTime)
         @test args["c9"] == [ DateTime(Date(2019, 1, 1)), DateTime(Date(2019, 1, 2)) ]
+        @test args["c10"] == 12
 
         new_instance = BSONSerializer.deserialize(bson)
         @test new_instance == instance
@@ -72,7 +74,8 @@ end
             Int16(-2),
             DateTime(Dates.today()),
             Dates.today(),
-            [Date(2019, 1, 1), Date(2019, 1, 2)])
+            [Date(2019, 1, 1), Date(2019, 1, 2)],
+            UInt32(12))
 
         oid = BSONObjectId()
 
@@ -104,6 +107,7 @@ end
         @test child_args["c7"] == DateTime(Dates.today())
         @test child_args["c8"] == child_args["c7"]
         @test child_args["c9"] == [ DateTime(Date(2019, 1, 1)), DateTime(Date(2019, 1, 2)) ]
+        @test child_args["c10"] == 12
         @test args["f4"] == oid
         @test args["f5"] == "sym"
         @test args["f6"] == "∈"

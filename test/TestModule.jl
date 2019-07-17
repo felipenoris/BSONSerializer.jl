@@ -14,6 +14,7 @@ struct ChildType
     c7::DateTime
     c8::Date
     c9::Vector{Date}
+    c10::UInt32
 end
 
 function Base.:(==)(c1::ChildType, c2::ChildType)
@@ -25,7 +26,8 @@ function Base.:(==)(c1::ChildType, c2::ChildType)
             && c1.c6 == c2.c6
             && c1.c7 == c2.c7
             && c1.c8 == c2.c8
-            && c1.c9 == c2.c9)
+            && c1.c9 == c2.c9
+            && c1.c10 == c2.c10)
 end
 
 struct FatherType

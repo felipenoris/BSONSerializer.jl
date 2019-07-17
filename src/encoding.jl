@@ -1,6 +1,6 @@
 
 const NATIVE_BSON_DATATYPE = Union{String, Int32, Int64, DateTime, Float64, Bool, BSONObjectId}
-const OTHER_NUMERIC_DATATYPE = Union{UInt8, UInt16, Int8, Int16}
+const OTHER_NUMERIC_DATATYPE = Union{UInt8, UInt16, Int8, Int16, UInt32}
 
 #
 # Native types supported by BSON
