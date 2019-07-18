@@ -31,7 +31,7 @@ function codegen_serialize(expr, datatype::DataType) :: Expr
     field_value_pairs = Expr(:tuple,
         [ field_value_pair_expr(nm, t) for (nm, t) in nametypetuples(datatype) ]...)
 
-    expr_str = "$expr"
+    expr_str = replace(replace("$expr", "(" => ""), ")" => "")
 
     quote
         function BSONSerializer.serialize(val::BSONSerializer.Serializable{$datatype})
