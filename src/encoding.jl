@@ -35,6 +35,21 @@ function encode_type(::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
 end
 
 #
+# UInt64 is reinterpreted into Int64
+#
+function encode(val::UInt64)
+    reinterpret(Int64, val)
+end
+
+function decode(val::Int64, ::Type{UInt64})
+    reinterpret(UInt64, val)
+end
+
+function encode_type(::Type{UInt64})
+    Int64
+end
+
+#
 # Integers can be decoded to Float64
 #
 

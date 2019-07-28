@@ -14,6 +14,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.DateEncodedAsString)
 @BSONSerializable(TestModule.Submodule.SubStruct)
 @BSONSerializable(TestModule.StructFloat)
+@BSONSerializable(TestModule.StructUInt64)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v), T)
@@ -177,6 +178,20 @@ end
         new_instance = BSONSerializer.deserialize(bson)
         @test new_instance.val == 10
         @test isa(new_instance.val, Float64)
+    end
+
+    @testset "UInt64" begin
+        let
+            instance = TestModule.StructUInt64(typemax(UInt64))
+            new_instance = BSONSerializer.roundtrip(instance)
+            @test new_instance == instance
+        end
+
+        let
+            instance = TestModule.StructUInt64(typemin(UInt64))
+            new_instance = BSONSerializer.roundtrip(instance)
+            @test new_instance == instance
+        end
     end
 end
 

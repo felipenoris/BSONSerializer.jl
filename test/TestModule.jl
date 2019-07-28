@@ -87,4 +87,8 @@ struct StructFloat
     val::Float64
 end
 
+struct StructUInt64
+    val::UInt64
+end
+
 end # TestModule
