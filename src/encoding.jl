@@ -10,7 +10,7 @@ function encode(val::T, ::Type{T}) where {T<:NATIVE_BSON_DATATYPE}
     val
 end
 
-function decode(val::T, ::Type{T}) where {T<:NATIVE_BSON_DATATYPE}
+function decode(val::T, ::Type{T}, m::Module) where {T<:NATIVE_BSON_DATATYPE}
     val
 end
 
@@ -26,7 +26,7 @@ function encode(val::T, ::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
     Int32(val)
 end
 
-function decode(val::Int32, ::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
+function decode(val::Int32, ::Type{T}, m::Module) where {T<:OTHER_NUMERIC_DATATYPE}
     T(val)
 end
 
@@ -41,7 +41,7 @@ function encode(val::UInt64, ::Type{UInt64})
     reinterpret(Int64, val)
 end
 
-function decode(val::Int64, ::Type{UInt64})
+function decode(val::Int64, ::Type{UInt64}, m::Module)
     reinterpret(UInt64, val)
 end
 
@@ -53,7 +53,7 @@ end
 # Integers can be decoded to Float64
 #
 
-function decode(val::Integer, ::Type{Float64})
+function decode(val::Integer, ::Type{Float64}, m::Module)
     Float64(val)
 end
 
@@ -63,10 +63,10 @@ end
 
 encode(val::Date, ::Type{Date}) = DateTime(val)
 
-decode(val::DateTime, ::Type{Date}) = Date(val)
+decode(val::DateTime, ::Type{Date}, m::Module) = Date(val)
 
 # accept String with standard format "yyyy-mm-dd"
-decode(val::String, ::Type{Date}) = Date(val)
+decode(val::String, ::Type{Date}, m::Module) = Date(val)
 
 encode_type(::Type{Date}) = DateTime
 
@@ -78,8 +78,8 @@ function encode(val::Vector{T}, ::Type{Vector{T}}) where {T}
     [ encode(x, T) for x in val ]
 end
 
-function decode(val::Vector, ::Type{Vector{T}}) where {T}
-    T[ decode(x, T) for x in val ]
+function decode(val::Vector, ::Type{Vector{T}}, m::Module) where {T}
+    T[ decode(x, T, m) for x in val ]
 end
 
 function encode_type(val::Vector{T}) where {T}
@@ -91,14 +91,14 @@ end
 #
 
 encode(val::Symbol, ::Type{Symbol}) = String(val)
-decode(val::String, ::Type{Symbol}) = Symbol(val)
+decode(val::String, ::Type{Symbol}, m::Module) = Symbol(val)
 encode_type(::Type{Symbol}) = String
 
 #
 # Char is encoded as String
 #
 encode(val::Char, ::Type{Char}) = string(val)
-decode(val::String, ::Type{Char}) = val[1]
+decode(val::String, ::Type{Char}, m::Module) = val[1]
 encode_type(::Type{Char}) = String
 
 #
@@ -119,7 +119,7 @@ function encode(val::T, ::Type{T}) where {T<:Union{DatePeriod, TimePeriod}}
     val.value
 end
 
-function decode(val::Int, ::Type{T}) where {T<:Union{DatePeriod, TimePeriod}}
+function decode(val::Int, ::Type{T}, m::Module) where {T<:Union{DatePeriod, TimePeriod}}
     T(val)
 end
 
@@ -151,10 +151,10 @@ function encode(val::Dict{K,V}, ::Type{Dict{K,V}}) where {K,V}
     return encoded_dict
 end
 
-function decode(val::Dict, ::Type{Dict{K,V}}) where {K,V}
+function decode(val::Dict, ::Type{Dict{K,V}}, m::Module) where {K,V}
     decoded_dict = Dict{K,V}()
     for (k,v) in val
-        decoded_dict[decode_dict_key(k, K)] = decode(val[k], V)
+        decoded_dict[decode_dict_key(k, K)] = decode(val[k], V, m)
     end
     return decoded_dict
 end
@@ -164,11 +164,11 @@ function encode(val::T, ::Type{A}) where {T,A}
     return BSON("type" => "$T", "value" => encode(val, T))
 end
 
-function decode(val::T, ::Type{A}) where {T<:Union{BSONSerializer.BSON, Dict}, A}
+function decode(val::T, ::Type{A}, m::Module) where {T<:Union{BSONSerializer.BSON, Dict}, A}
     if haskey(val, "value")
-        return decode(val["value"], Main.eval(Meta.parse(val["type"])))
+        return decode(val["value"], m.eval(Meta.parse(val["type"])), m)
     else
         @assert haskey(val, "args")
-        return decode(val, Main.eval(Meta.parse(val["type"])))
+        return decode(val, m.eval(Meta.parse(val["type"])), m)
     end
 end

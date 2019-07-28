@@ -37,7 +37,7 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
     @nospecialize expr datatype
 
     function arg_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
-        return :(BSONSerializer.decode( args[$("$nm")], $T))
+        return :(BSONSerializer.decode( args[$("$nm")], $T, m))
     end
 
     arg_list = Expr(:tuple,
@@ -45,7 +45,7 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
 
     expr_str = "$expr"
     quote
-        function BSONSerializer.deserialize(bson::Union{BSONSerializer.BSON, Dict}, ::Type{BSONSerializer.Serializable{$datatype}})
+        function BSONSerializer.deserialize(bson::Union{BSONSerializer.BSON, Dict}, ::Type{BSONSerializer.Serializable{$datatype}}, m::Module=Main)
             args = bson["args"]
             ($datatype)($arg_list...)
         end
@@ -106,7 +106,7 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
             BSONSerializer.encode_type(::Type{$datatype}) = BSONSerializer.BSON
 
             $expr_deserialize_method
-            BSONSerializer.decode(val::Union{BSONSerializer.BSON, Dict}, ::Type{$datatype}) = BSONSerializer.deserialize(val, BSONSerializer.Serializable{$datatype})
+            BSONSerializer.decode(val::Union{BSONSerializer.BSON, Dict}, ::Type{$datatype}, m::Module) = BSONSerializer.deserialize(val, BSONSerializer.Serializable{$datatype}, m)
         end
 
     elseif isa(expr, Expr) && expr.head == :struct
