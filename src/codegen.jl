@@ -10,21 +10,14 @@ function nametypetuples(t::DataType)
     return [ (_fieldnames[i], _fieldtypes[i]) for i in 1:length(_fieldnames) ]
 end
 
-# don't touch this
 function codegen_serialize(expr, datatype::DataType) :: Expr
     @nospecialize expr datatype
 
     # returns expression:
     # "fieldname" => val.val.fieldname
     function field_value_pair_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
-        # val.val.fieldname
-        val_expr = Expr(:., Expr(:., :val, QuoteNode(:val)), QuoteNode(nm))
-
-        # BSONSerializer.encode(val.val.fieldname)
-        encode_expr = Expr(:call, Expr(:., :BSONSerializer, QuoteNode(:encode)), val_expr)
-
         # "fieldname" => BSONSerializer.encode(val.val.fieldname)
-        Expr(:call, :(=>), "$nm", encode_expr)
+        return :($("$nm") => BSONSerializer.encode(val.val.$nm))
     end
 
     # "f1" => val.val.1, "f2" => val.val.f2, ...
@@ -40,15 +33,11 @@ function codegen_serialize(expr, datatype::DataType) :: Expr
    end
 end
 
-# don't touch this
 function codegen_deserialize(expr, datatype::DataType) :: Expr
     @nospecialize expr datatype
 
     function arg_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
-        nm_str = "$nm"
-        val_expr = Expr(:ref, :args, nm_str)
-        decode_expr = Expr(:call, Expr(:., :BSONSerializer, QuoteNode(:decode)), val_expr, T)
-        return decode_expr
+        return :(BSONSerializer.decode( args[$("$nm")], $T))
     end
 
     arg_list = Expr(:tuple,
