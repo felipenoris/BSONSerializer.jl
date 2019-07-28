@@ -15,6 +15,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.Submodule.SubStruct)
 @BSONSerializable(TestModule.StructFloat)
 @BSONSerializable(TestModule.StructUInt64)
+@BSONSerializable(TestModule.StructAbsTypes)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v, T), T)
@@ -204,6 +205,21 @@ end
 
     instance = Tagged(1, "hey")
     @test instance == BSONSerializer.roundtrip(instance)
+end
+
+@testset "abstract types" begin
+    let
+        instance = TestModule.StructAbsTypes(1)
+        bson = BSONSerializer.serialize(instance)
+        new_instance = BSONSerializer.deserialize(bson)
+        @test new_instance == instance
+    end
+
+    let
+        instance = TestModule.StructAbsTypes(Tagged(1, "hey"))
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
 end
 
 @testset "Usage" begin

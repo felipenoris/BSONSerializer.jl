@@ -91,4 +91,8 @@ struct StructUInt64
     val::UInt64
 end
 
+struct StructAbsTypes
+    val::Any
+end
+
 end # TestModule

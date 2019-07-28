@@ -158,3 +158,17 @@ function decode(val::Dict, ::Type{Dict{K,V}}) where {K,V}
     end
     return decoded_dict
 end
+
+# encode call comming from struct field with abstract type
+function encode(val::T, ::Type{A}) where {T,A}
+    return BSON("type" => "$T", "value" => encode(val, T))
+end
+
+function decode(val::T, ::Type{A}) where {T<:Union{BSONSerializer.BSON, Dict}, A}
+    if haskey(val, "value")
+        return decode(val["value"], Main.eval(Meta.parse(val["type"])))
+    else
+        @assert haskey(val, "args")
+        return decode(val, Main.eval(Meta.parse(val["type"])))
+    end
+end
