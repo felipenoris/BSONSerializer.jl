@@ -111,23 +111,19 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
         expr_serialize_method = codegen_serialize(expr, datatype)
         expr_deserialize_method = codegen_deserialize(expr, datatype)
 
-        #println(expr_serialize_method)
-        __module__.eval(expr_serialize_method)
-        __module__.eval(quote
+        return quote
+            $expr_serialize_method
             BSONSerializer.encode(val::$datatype) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
             BSONSerializer.encode_type(::Type{$datatype}) = BSONSerializer.BSON
-        end)
 
-        #println(expr_deserialize_method)
-        __module__.eval(expr_deserialize_method)
-        __module__.eval(quote
+            $expr_deserialize_method
             BSONSerializer.decode(val::Union{BSONSerializer.BSON, Dict}, ::Type{$datatype}) = BSONSerializer.deserialize(val, BSONSerializer.Serializable{$datatype})
-        end)
+        end
 
-        return
     elseif isa(expr, Expr) && expr.head == :struct
         println("macro was applied to struct definition. Skipping...")
         return esc(expr)
+
     else
         error("Couldn't apply @BSONSerialize to $expr.")
     end
