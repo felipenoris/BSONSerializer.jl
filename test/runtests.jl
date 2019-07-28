@@ -17,7 +17,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.StructUInt64)
 
 function encode_roundtrip(v::T) where {T}
-    BSONSerializer.decode(BSONSerializer.encode(v), T)
+    BSONSerializer.decode(BSONSerializer.encode(v, T), T)
 end
 
 @testset "encode" begin

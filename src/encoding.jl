@@ -6,7 +6,7 @@ const OTHER_NUMERIC_DATATYPE = Union{UInt8, UInt16, Int8, Int16, UInt32}
 # Native types supported by BSON
 #
 
-function encode(val::T) where {T<:NATIVE_BSON_DATATYPE}
+function encode(val::T, ::Type{T}) where {T<:NATIVE_BSON_DATATYPE}
     val
 end
 
@@ -22,7 +22,7 @@ end
 # Integer numbers smalled than 32bits are encoded as Int32
 #
 
-function encode(val::T) where {T<:OTHER_NUMERIC_DATATYPE}
+function encode(val::T, ::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
     Int32(val)
 end
 
@@ -37,7 +37,7 @@ end
 #
 # UInt64 is reinterpreted into Int64
 #
-function encode(val::UInt64)
+function encode(val::UInt64, ::Type{UInt64})
     reinterpret(Int64, val)
 end
 
@@ -61,7 +61,7 @@ end
 # Date is encoded as DateTime with zeroed Time
 #
 
-encode(val::Date) = DateTime(val)
+encode(val::Date, ::Type{Date}) = DateTime(val)
 
 decode(val::DateTime, ::Type{Date}) = Date(val)
 
@@ -74,8 +74,8 @@ encode_type(::Type{Date}) = DateTime
 # Vectors are encoded as BSON vectors with encoded values
 #
 
-function encode(val::Vector{T}) where {T}
-    [ encode(x) for x in val ]
+function encode(val::Vector{T}, ::Type{Vector{T}}) where {T}
+    [ encode(x, T) for x in val ]
 end
 
 function decode(val::Vector, ::Type{Vector{T}}) where {T}
@@ -90,14 +90,14 @@ end
 # Symbols are encoded as strings
 #
 
-encode(val::Symbol) = String(val)
+encode(val::Symbol, ::Type{Symbol}) = String(val)
 decode(val::String, ::Type{Symbol}) = Symbol(val)
 encode_type(::Type{Symbol}) = String
 
 #
 # Char is encoded as String
 #
-encode(val::Char) = string(val)
+encode(val::Char, ::Type{Char}) = string(val)
 decode(val::String, ::Type{Char}) = val[1]
 encode_type(::Type{Char}) = String
 
@@ -115,7 +115,7 @@ end
 # DatePeriod and TimePeriod are encoded as Int
 #
 
-function encode(val::T) where {T<:Union{DatePeriod, TimePeriod}}
+function encode(val::T, ::Type{T}) where {T<:Union{DatePeriod, TimePeriod}}
     val.value
 end
 
@@ -143,16 +143,16 @@ function decode_dict_key(key::String, ::Type{T}) where {T<:Integer}
     T(parse(Int, key))
 end
 
-function encode(val::Dict{K,V}) where {K,V}
+function encode(val::Dict{K,V}, ::Type{Dict{K,V}}) where {K,V}
     encoded_dict = Dict{String, encode_type(V)}()
     for (k,v) in val
-        encoded_dict[encode_dict_key(k)] = encode(v)
+        encoded_dict[encode_dict_key(k)] = encode(v, V)
     end
     return encoded_dict
 end
 
-function decode(val::Dict, ::Type{Dict{K, V}}) where {K,V}
-    decoded_dict = Dict{K, V}()
+function decode(val::Dict, ::Type{Dict{K,V}}) where {K,V}
+    decoded_dict = Dict{K,V}()
     for (k,v) in val
         decoded_dict[decode_dict_key(k, K)] = decode(val[k], V)
     end

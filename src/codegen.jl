@@ -13,17 +13,17 @@ end
 function codegen_serialize(expr, datatype::DataType) :: Expr
     @nospecialize expr datatype
 
-    # returns expression:
     # "fieldname" => val.val.fieldname
     function field_value_pair_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
-        # "fieldname" => BSONSerializer.encode(val.val.fieldname)
-        return :($("$nm") => BSONSerializer.encode(val.val.$nm))
+        # "fieldname" => BSONSerializer.encode(val.val.fieldname, T)
+        return :($("$nm") => BSONSerializer.encode(val.val.$nm, $T))
     end
 
     # "f1" => val.val.1, "f2" => val.val.f2, ...
     field_value_pairs = Expr(:tuple,
         [ field_value_pair_expr(nm, t) for (nm, t) in nametypetuples(datatype) ]...)
 
+    # removes '(' and ')' characters from datatype expression
     expr_str = replace(replace("$expr", "(" => ""), ")" => "")
 
     quote
@@ -102,7 +102,7 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
 
         return quote
             $expr_serialize_method
-            BSONSerializer.encode(val::$datatype) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
+            BSONSerializer.encode(val::$datatype, ::Type{$datatype}) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
             BSONSerializer.encode_type(::Type{$datatype}) = BSONSerializer.BSON
 
             $expr_deserialize_method
