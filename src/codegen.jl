@@ -121,8 +121,11 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
         end
 
     elseif isa(expr, Expr) && expr.head == :struct
-        println("macro was applied to struct definition. Skipping...")
-        return esc(expr)
+        __module__.eval(expr) # a bit of a hack...
+        struct_name = expr.args[2]
+        return quote
+            @BSONSerializable($struct_name)
+        end
 
     else
         error("Couldn't apply @BSONSerialize to $expr.")

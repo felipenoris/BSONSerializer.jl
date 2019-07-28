@@ -195,6 +195,17 @@ end
     end
 end
 
+@BSONSerializable struct Tagged
+    a::Int
+    b::String
+end
+
+@testset "tagged struct" begin
+
+    instance = Tagged(1, "hey")
+    @test instance == BSONSerializer.roundtrip(instance)
+end
+
 @testset "Usage" begin
     include("usage.jl")
 end
