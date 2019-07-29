@@ -69,8 +69,12 @@ end
 struct SingletonStruct
 end
 
-struct Option
+struct OptionNothing
     val::Union{Nothing, Int}
+end
+
+struct OptionMissing
+    val::Union{Missing, String}
 end
 
 struct DateEncodedAsString
@@ -89,6 +93,14 @@ end
 
 struct StructUInt64
     val::UInt64
+end
+
+struct StructAbsTypes
+    val::Any
+end
+
+function Base.:(==)(s1::StructAbsTypes, s2::StructAbsTypes)
+    return s1.val == s2.val
 end
 
 end # TestModule

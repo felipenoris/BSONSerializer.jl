@@ -13,17 +13,17 @@ end
 function codegen_serialize(expr, datatype::DataType) :: Expr
     @nospecialize expr datatype
 
-    # returns expression:
     # "fieldname" => val.val.fieldname
     function field_value_pair_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
-        # "fieldname" => BSONSerializer.encode(val.val.fieldname)
-        return :($("$nm") => BSONSerializer.encode(val.val.$nm))
+        # "fieldname" => BSONSerializer.encode(val.val.fieldname, T)
+        return :($("$nm") => BSONSerializer.encode(val.val.$nm, $T))
     end
 
     # "f1" => val.val.1, "f2" => val.val.f2, ...
     field_value_pairs = Expr(:tuple,
         [ field_value_pair_expr(nm, t) for (nm, t) in nametypetuples(datatype) ]...)
 
+    # removes '(' and ')' characters from datatype expression
     expr_str = replace(replace("$expr", "(" => ""), ")" => "")
 
     quote
@@ -37,7 +37,7 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
     @nospecialize expr datatype
 
     function arg_expr(nm::Symbol, @nospecialize(tt::Type{T})) :: Expr where {T}
-        return :(BSONSerializer.decode( args[$("$nm")], $T))
+        return :(BSONSerializer.decode( args[$("$nm")], $T, m))
     end
 
     arg_list = Expr(:tuple,
@@ -45,7 +45,7 @@ function codegen_deserialize(expr, datatype::DataType) :: Expr
 
     expr_str = "$expr"
     quote
-        function BSONSerializer.deserialize(bson::Union{BSONSerializer.BSON, Dict}, ::Type{BSONSerializer.Serializable{$datatype}})
+        function BSONSerializer.deserialize(bson::Union{BSONSerializer.BSON, Dict}, ::Type{BSONSerializer.Serializable{$datatype}}, m::Module=Main)
             args = bson["args"]
             ($datatype)($arg_list...)
         end
@@ -102,11 +102,11 @@ macro BSONSerializable(expr::Union{Expr, Symbol})
 
         return quote
             $expr_serialize_method
-            BSONSerializer.encode(val::$datatype) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
+            BSONSerializer.encode(val::$datatype, ::Type{$datatype}) = BSONSerializer.serialize(BSONSerializer.Serializable(val))
             BSONSerializer.encode_type(::Type{$datatype}) = BSONSerializer.BSON
 
             $expr_deserialize_method
-            BSONSerializer.decode(val::Union{BSONSerializer.BSON, Dict}, ::Type{$datatype}) = BSONSerializer.deserialize(val, BSONSerializer.Serializable{$datatype})
+            BSONSerializer.decode(val::Union{BSONSerializer.BSON, Dict}, ::Type{$datatype}, m::Module) = BSONSerializer.deserialize(val, BSONSerializer.Serializable{$datatype}, m)
         end
 
     elseif isa(expr, Expr) && expr.head == :struct

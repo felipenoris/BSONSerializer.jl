@@ -10,14 +10,16 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.ManyDicts)
 @BSONSerializable(TestModule.Periods)
 @BSONSerializable(TestModule.SingletonStruct)
-@BSONSerializable(TestModule.Option)
+@BSONSerializable(TestModule.OptionNothing)
+@BSONSerializable(TestModule.OptionMissing)
 @BSONSerializable(TestModule.DateEncodedAsString)
 @BSONSerializable(TestModule.Submodule.SubStruct)
 @BSONSerializable(TestModule.StructFloat)
 @BSONSerializable(TestModule.StructUInt64)
+@BSONSerializable(TestModule.StructAbsTypes)
 
 function encode_roundtrip(v::T) where {T}
-    BSONSerializer.decode(BSONSerializer.encode(v), T)
+    BSONSerializer.decode(BSONSerializer.encode(v, T), T, @__MODULE__)
 end
 
 @testset "encode" begin
@@ -138,13 +140,27 @@ end
         @test new_instance == instance
     end
 
-#=
     @testset "Option" begin
-        instance = TestModule.Option(1)
-        new_instance = BSONSerializer.roundtrip(instance)
-        @test new_instance == instance
+        let
+            instance = TestModule.OptionNothing(1)
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
+
+        let
+            instance = TestModule.OptionNothing(nothing)
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
+
+        let
+            instance = TestModule.OptionMissing("hey")
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
+
+        let
+            instance = TestModule.OptionMissing(missing)
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
     end
-=#
 
     @testset "DateEncodedAsString" begin
         instance = TestModule.DateEncodedAsString(Date(2019,12,25))
@@ -204,6 +220,33 @@ end
 
     instance = Tagged(1, "hey")
     @test instance == BSONSerializer.roundtrip(instance)
+end
+
+@testset "abstract types" begin
+    let
+        instance = TestModule.StructAbsTypes(1)
+        bson = BSONSerializer.serialize(instance)
+        new_instance = BSONSerializer.deserialize(bson)
+        @test new_instance == instance
+    end
+
+    let
+        instance = TestModule.StructAbsTypes(Tagged(1, "hey"))
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
+
+    let
+        instance = TestModule.StructAbsTypes(TestModule.StructAbsTypes("omg"))
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
+
+    let
+        instance = TestModule.StructAbsTypes([TestModule.StructAbsTypes("omg"), 1])
+        new_instance = BSONSerializer.roundtrip(instance)
+        @test new_instance == instance
+    end
 end
 
 @testset "Usage" begin
