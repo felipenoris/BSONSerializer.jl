@@ -18,5 +18,13 @@ function roundtrip(val::T) where {T}
     return deserialize(serialize(Serializable(val)), Serializable{T})
 end
 
+function serialize(io::IO, val::T) where {T}
+	write(io, serialize(val))
+end
+
+function deserialize(io::IO, m::Module=Main)
+	return deserialize(read(io, BSON), m)
+end
+
 @BSONSerializable(Missing)
 @BSONSerializable(Nothing)

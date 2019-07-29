@@ -119,6 +119,35 @@ end
         @test new_father_instance == father_instance
     end
 
+    @testset "IO" begin
+        child_instance = TestModule.ChildType(
+            "hey",
+            101,
+            UInt8(1),
+            Int8(-1),
+            UInt16(2),
+            Int16(-2),
+            DateTime(Dates.today()),
+            Dates.today(),
+            [Date(2019, 1, 1), Date(2019, 1, 2)],
+            UInt32(12))
+
+        oid = BSONObjectId()
+
+        father_instance = TestModule.FatherType(
+            "Hello from father",
+            child_instance,
+            [1, 2, 3],
+            oid,
+            :sym,
+            '∈')
+
+        io = IOBuffer()
+        BSONSerializer.serialize(io, father_instance)
+        seekstart(io)
+        @test father_instance == BSONSerializer.deserialize(io)
+    end
+
     @testset "Periods" begin
         instance = TestModule.Periods(Year(2000), Month(12), Day(20), Hour(23), Minute(59))
         new_instance = BSONSerializer.roundtrip(instance)
