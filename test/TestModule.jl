@@ -69,8 +69,12 @@ end
 struct SingletonStruct
 end
 
-struct Option
+struct OptionNothing
     val::Union{Nothing, Int}
+end
+
+struct OptionMissing
+    val::Union{Missing, String}
 end
 
 struct DateEncodedAsString

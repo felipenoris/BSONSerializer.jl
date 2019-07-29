@@ -10,7 +10,8 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.ManyDicts)
 @BSONSerializable(TestModule.Periods)
 @BSONSerializable(TestModule.SingletonStruct)
-@BSONSerializable(TestModule.Option)
+@BSONSerializable(TestModule.OptionNothing)
+@BSONSerializable(TestModule.OptionMissing)
 @BSONSerializable(TestModule.DateEncodedAsString)
 @BSONSerializable(TestModule.Submodule.SubStruct)
 @BSONSerializable(TestModule.StructFloat)
@@ -139,13 +140,27 @@ end
         @test new_instance == instance
     end
 
-#=
     @testset "Option" begin
-        instance = TestModule.Option(1)
-        new_instance = BSONSerializer.roundtrip(instance)
-        @test new_instance == instance
+        let
+            instance = TestModule.OptionNothing(1)
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
+
+        let
+            instance = TestModule.OptionNothing(nothing)
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
+
+        let
+            instance = TestModule.OptionMissing("hey")
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
+
+        let
+            instance = TestModule.OptionMissing(missing)
+            @test instance == BSONSerializer.roundtrip(instance)
+        end
     end
-=#
 
     @testset "DateEncodedAsString" begin
         instance = TestModule.DateEncodedAsString(Date(2019,12,25))

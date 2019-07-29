@@ -17,3 +17,6 @@ end
 function roundtrip(val::T) where {T}
     return deserialize(serialize(Serializable(val)), Serializable{T})
 end
+
+@BSONSerializable(Missing)
+@BSONSerializable(Nothing)
