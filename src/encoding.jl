@@ -19,7 +19,7 @@ function encode_type(::Type{T}) where {T<:NATIVE_BSON_DATATYPE}
 end
 
 #
-# Integer numbers smalled than 32bits are encoded as Int32
+# Integer numbers smaller than 32bits are encoded as Int32
 #
 
 function encode(val::T, ::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
@@ -55,6 +55,14 @@ end
 
 function decode(val::Integer, ::Type{Float64}, m::Module)
     Float64(val)
+end
+
+#
+# Int32 can be decoded as Int64
+#
+
+function decode(val::Int32, ::Type{Int64}, m::module)
+    Int64(val)
 end
 
 #
