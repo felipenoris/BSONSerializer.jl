@@ -61,7 +61,7 @@ end
 # Int32 can be decoded as Int64
 #
 
-function decode(val::Int32, ::Type{Int64}, m::module)
+function decode(val::Int32, ::Type{Int64}, m::Module)
     Int64(val)
 end
 
