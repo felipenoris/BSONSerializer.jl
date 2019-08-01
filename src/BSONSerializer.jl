@@ -3,7 +3,7 @@ module BSONSerializer
 
 using Mongoc: BSON, BSONObjectId
 
-using Dates
+using Dates, InteractiveUtils
 
 export @BSONSerializable
 

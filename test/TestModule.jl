@@ -99,6 +99,10 @@ struct StructAbsTypes
     val::Any
 end
 
+struct UnionPeriods
+    val::Union{Dates.Day, Dates.Month, Dates.Year}
+end
+
 function Base.:(==)(s1::StructAbsTypes, s2::StructAbsTypes)
     return s1.val == s2.val
 end

@@ -1,37 +1,72 @@
 
-const NATIVE_BSON_DATATYPE = Union{String, Int32, Int64, DateTime, Float64, Bool, BSONObjectId}
-const OTHER_NUMERIC_DATATYPE = Union{UInt8, UInt16, Int8, Int16, UInt32}
+"""
+    encode(val, source_type)
+
+Encodes `val::T` that comes from
+a struct with declared type `source_type`.
+
+Most of the time, `T == source_type`.
+But fields with abstract or union types will
+display a concrete `T` type and an abstract `source_type`.
+When this happens, it is necessary to pass
+type information to the encoded value.
+"""
+function encode end
+
+"""
+    decode(val, target_type, module)
+
+Decodes `val::T` to a field with declared type `target_type`.
+
+`val` is the value stored in the BSON.
+"""
+function decode end
+
+"""
+    encode_type(T)
+
+Reports the type used to encode a type `T` to BSON.
+"""
+function encode_type end
 
 #
 # Native types supported by BSON
 #
 
-function encode(val::T, ::Type{T}) where {T<:NATIVE_BSON_DATATYPE}
-    val
-end
+for tt in (String, Int32, Int64, DateTime, Float64, Bool, BSONObjectId)
+    @eval begin
+            function encode(val::$tt, ::Type{$tt})
+                val
+            end
 
-function decode(val::T, ::Type{T}, m::Module) where {T<:NATIVE_BSON_DATATYPE}
-    val
-end
+            function decode(val::$tt, ::Type{$tt}, m::Module)
+                val
+            end
 
-function encode_type(::Type{T}) where {T<:NATIVE_BSON_DATATYPE}
-    T
+            function encode_type(::Type{$tt})
+                $tt
+            end
+    end
 end
 
 #
 # Integer numbers smaller than 32bits are encoded as Int32
 #
 
-function encode(val::T, ::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
-    Int32(val)
-end
+for tt in (UInt8, UInt16, Int8, Int16, UInt32)
+    @eval begin
+            function encode(val::$tt, ::Type{$tt})
+                Int32(val)
+            end
 
-function decode(val::Int32, ::Type{T}, m::Module) where {T<:OTHER_NUMERIC_DATATYPE}
-    T(val)
-end
+            function decode(val::Int32, ::Type{$tt}, m::Module)
+                ($tt)(val)
+            end
 
-function encode_type(::Type{T}) where {T<:OTHER_NUMERIC_DATATYPE}
-    Int32
+            function encode_type(::Type{$tt})
+                Int32
+            end
+    end
 end
 
 #
@@ -123,16 +158,20 @@ end
 # DatePeriod and TimePeriod are encoded as Int
 #
 
-function encode(val::T, ::Type{T}) where {T<:Union{DatePeriod, TimePeriod}}
-    val.value
-end
+for tt in union(InteractiveUtils.subtypes(DatePeriod), InteractiveUtils.subtypes(TimePeriod))
+    @eval begin
+            function encode(val::$tt, ::Type{$tt})
+                val.value
+            end
 
-function decode(val::Int, ::Type{T}, m::Module) where {T<:Union{DatePeriod, TimePeriod}}
-    T(val)
-end
+            function decode(val::Int, ::Type{$tt}, m::Module)
+                ($tt)(val)
+            end
 
-function encode_type(::Type{T}) where {T<:Union{DatePeriod, TimePeriod}}
-    Int
+            function encode_type(::Type{$tt})
+                Int
+            end
+    end
 end
 
 #
@@ -168,15 +207,19 @@ function decode(val::Dict, ::Type{Dict{K,V}}, m::Module) where {K,V}
 end
 
 # encode call comming from struct field with abstract type
-function encode(val::T, ::Type{A}) where {T,A}
+function encode(val::T, ::Type{A}) where {T, A}
+    @assert T != A "encode method for type $T was not provided."
     return BSON("type" => "$T", "value" => encode(val, T))
 end
 
 function decode(val::T, ::Type{A}, m::Module) where {T<:Union{BSONSerializer.BSON, Dict}, A}
     if haskey(val, "value")
         return decode(val["value"], m.eval(Meta.parse(val["type"])), m)
-    else
-        @assert haskey(val, "args")
+    elseif haskey(val, "args")
         return decode(val, m.eval(Meta.parse(val["type"])), m)
+    elseif T == A
+        error("decode method for type $T was not provided.")
+    else
+        error("Can't decode from value of type $T to target type $A.")
     end
 end
