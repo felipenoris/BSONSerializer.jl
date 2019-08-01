@@ -164,7 +164,11 @@ for tt in union(InteractiveUtils.subtypes(DatePeriod), InteractiveUtils.subtypes
                 val.value
             end
 
-            function decode(val::Int, ::Type{$tt}, m::Module)
+            function decode(val::Int64, ::Type{$tt}, m::Module)
+                ($tt)(val)
+            end
+
+            function decode(val::Int32, ::Type{$tt}, m::Module)
                 ($tt)(val)
             end
 
