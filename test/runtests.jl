@@ -21,6 +21,7 @@ include("TestModule.jl")
 @BSONSerializable(TestModule.StructUInt64)
 @BSONSerializable(TestModule.StructAbsTypes)
 @BSONSerializable(TestModule.UnionPeriods)
+@BSONSerializable(TestModule.Lift2)
 
 function encode_roundtrip(v::T) where {T}
     BSONSerializer.decode(BSONSerializer.encode(v, T), T, @__MODULE__)
@@ -250,7 +251,7 @@ end
         val = bson["args"]["val"]
         @test isa(val, Dict)
         @test haskey(val, "type")
-        @test val["type"] == "Day"
+        @test val["type"] == ["Dates", "Day"]
         @test haskey(val, "value")
         @test val["value"] == 1
         new_instance = BSONSerializer.deserialize(bson)
@@ -294,6 +295,12 @@ end
         new_instance = BSONSerializer.roundtrip(instance)
         @test new_instance == instance
     end
+end
+
+@testset "encode functions" begin
+    instance = TestModule.Lift2(+, 2, 3)
+    new_instance = BSONSerializer.roundtrip(instance)
+    @test TestModule.exec_op(new_instance) == 5
 end
 
 @testset "Usage" begin
