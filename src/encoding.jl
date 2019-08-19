@@ -39,7 +39,7 @@ for tt in (String, Int32, Int64, DateTime, Float64, Bool, BSONObjectId)
                 val
             end
 
-            function decode(val::$tt, ::Type{$tt}, m::Module)
+            function decode(val::$tt, ::Type{$tt})
                 val
             end
 
@@ -59,7 +59,7 @@ for tt in (UInt8, UInt16, Int8, Int16, UInt32)
                 Int32(val)
             end
 
-            function decode(val::Int32, ::Type{$tt}, m::Module)
+            function decode(val::Int32, ::Type{$tt})
                 ($tt)(val)
             end
 
@@ -76,7 +76,7 @@ function encode(val::UInt64, ::Type{UInt64})
     reinterpret(Int64, val)
 end
 
-function decode(val::Int64, ::Type{UInt64}, m::Module)
+function decode(val::Int64, ::Type{UInt64})
     reinterpret(UInt64, val)
 end
 
@@ -88,7 +88,7 @@ end
 # Integers can be decoded to Float64
 #
 
-function decode(val::Integer, ::Type{Float64}, m::Module)
+function decode(val::Integer, ::Type{Float64})
     Float64(val)
 end
 
@@ -96,7 +96,7 @@ end
 # Int32 can be decoded as Int64
 #
 
-function decode(val::Int32, ::Type{Int64}, m::Module)
+function decode(val::Int32, ::Type{Int64})
     Int64(val)
 end
 
@@ -106,10 +106,10 @@ end
 
 encode(val::Date, ::Type{Date}) = DateTime(val)
 
-decode(val::DateTime, ::Type{Date}, m::Module) = Date(val)
+decode(val::DateTime, ::Type{Date}) = Date(val)
 
 # accept String with standard format "yyyy-mm-dd"
-decode(val::String, ::Type{Date}, m::Module) = Date(val)
+decode(val::String, ::Type{Date}) = Date(val)
 
 encode_type(::Type{Date}) = DateTime
 
@@ -121,14 +121,14 @@ function encode(val::Vector{T}, ::Type{Vector{T}}) where {T}
     [ encode(x, T) for x in val ]
 end
 
-function decode(val::Array, ::Type{Vector{T}}, m::Module) where {T}
-    T[ decode(x, T, m) for x in val ]
+function decode(val::Array, ::Type{Vector{T}}) where {T}
+    T[ decode(x, T) for x in val ]
 end
 
 # in case type information is not available, assume Vector
-function decode(val::Array, ::Type{Array}, m::Module)
+function decode(val::Array, ::Type{Array})
     T = eltype(val)
-    T[ decode(x, T, m) for x in val ]
+    T[ decode(x, T) for x in val ]
 end
 
 function encode_type(val::Vector{T}) where {T}
@@ -140,14 +140,14 @@ end
 #
 
 encode(val::Symbol, ::Type{Symbol}) = String(val)
-decode(val::String, ::Type{Symbol}, m::Module) = Symbol(val)
+decode(val::String, ::Type{Symbol}) = Symbol(val)
 encode_type(::Type{Symbol}) = String
 
 #
 # Char is encoded as String
 #
 encode(val::Char, ::Type{Char}) = string(val)
-decode(val::String, ::Type{Char}, m::Module) = val[1]
+decode(val::String, ::Type{Char}) = val[1]
 encode_type(::Type{Char}) = String
 
 #
@@ -170,11 +170,11 @@ for tt in union(InteractiveUtils.subtypes(DatePeriod), InteractiveUtils.subtypes
                 val.value
             end
 
-            function decode(val::Int64, ::Type{$tt}, m::Module)
+            function decode(val::Int64, ::Type{$tt})
                 ($tt)(val)
             end
 
-            function decode(val::Int32, ::Type{$tt}, m::Module)
+            function decode(val::Int32, ::Type{$tt})
                 ($tt)(val)
             end
 
@@ -208,10 +208,10 @@ function encode(val::Dict{K,V}, ::Type{Dict{K,V}}) where {K,V}
     return encoded_dict
 end
 
-function decode(val::Dict, ::Type{Dict{K,V}}, m::Module) where {K,V}
+function decode(val::Dict, ::Type{Dict{K,V}}) where {K,V}
     decoded_dict = Dict{K,V}()
     for (k,v) in val
-        decoded_dict[decode_dict_key(k, K)] = decode(val[k], V, m)
+        decoded_dict[decode_dict_key(k, K)] = decode(val[k], V)
     end
     return decoded_dict
 end
@@ -222,11 +222,11 @@ function encode(val::T, ::Type{A}) where {T, A}
     return BSON("type" => typepathref(T), "value" => encode(val, T))
 end
 
-function decode(val::T, ::Type{A}, m::Module) where {T<:Union{BSONSerializer.BSON, Dict}, A}
+function decode(val::T, ::Type{A}) where {T<:Union{BSONSerializer.BSON, Dict}, A}
     if haskey(val, "value")
-        return decode(val["value"], resolve_typepath(val["type"]), m) #m.eval(Meta.parse(val["type"])), m)
+        return decode(val["value"], resolve_typepath(val["type"]))
     elseif haskey(val, "args")
-        return decode(val, resolve_typepath(val["type"]), m) #m.eval(Meta.parse(val["type"])), m)
+        return decode(val, resolve_typepath(val["type"]))
     elseif T == A
         error("decode method for type $T was not provided.")
     else
@@ -242,7 +242,7 @@ function encode(f::Function, ::Type{T}) where {T<:Function}
     return typepathref(typeof(f))
 end
 
-function decode(val::Vector, ::Type{T}, m::Module) where {T<:Function}
+function decode(val::Vector, ::Type{T}) where {T<:Function}
     datatype = resolve_typepath(val)
     @assert isdefined(datatype, :instance)
     return datatype.instance
