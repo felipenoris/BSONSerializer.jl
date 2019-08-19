@@ -121,7 +121,13 @@ function encode(val::Vector{T}, ::Type{Vector{T}}) where {T}
     [ encode(x, T) for x in val ]
 end
 
-function decode(val::Vector, ::Type{Vector{T}}, m::Module) where {T}
+function decode(val::Array, ::Type{Vector{T}}, m::Module) where {T}
+    T[ decode(x, T, m) for x in val ]
+end
+
+# in case type information is not available, assume Vector
+function decode(val::Array, ::Type{Array}, m::Module)
+    T = eltype(val)
     T[ decode(x, T, m) for x in val ]
 end
 
@@ -213,17 +219,35 @@ end
 # encode call comming from struct field with abstract type
 function encode(val::T, ::Type{A}) where {T, A}
     @assert T != A "encode method for type $T was not provided."
-    return BSON("type" => "$T", "value" => encode(val, T))
+    return BSON("type" => typepathref(T), "value" => encode(val, T))
 end
 
 function decode(val::T, ::Type{A}, m::Module) where {T<:Union{BSONSerializer.BSON, Dict}, A}
     if haskey(val, "value")
-        return decode(val["value"], m.eval(Meta.parse(val["type"])), m)
+        return decode(val["value"], resolve_typepath(val["type"]), m) #m.eval(Meta.parse(val["type"])), m)
     elseif haskey(val, "args")
-        return decode(val, m.eval(Meta.parse(val["type"])), m)
+        return decode(val, resolve_typepath(val["type"]), m) #m.eval(Meta.parse(val["type"])), m)
     elseif T == A
         error("decode method for type $T was not provided.")
     else
         error("Can't decode from value of type $T to target type $A.")
     end
+end
+
+#
+# encode Functions as singletons
+#
+
+function encode(f::Function, ::Type{T}) where {T<:Function}
+    return typepathref(typeof(f))
+end
+
+function decode(val::Vector, ::Type{T}, m::Module) where {T<:Function}
+    datatype = resolve_typepath(val)
+    @assert isdefined(datatype, :instance)
+    return datatype.instance
+end
+
+function encode_type(::Type{T}) where {T<:Function}
+    Vector{Any}
 end

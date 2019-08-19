@@ -107,4 +107,12 @@ function Base.:(==)(s1::StructAbsTypes, s2::StructAbsTypes)
     return s1.val == s2.val
 end
 
+struct Lift2
+    op::Function
+    arg1::Number
+    arg2::Number
+end
+
+exec_op(l::Lift2) = l.op(l.arg1, l.arg2)
+
 end # TestModule
