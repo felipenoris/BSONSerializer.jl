@@ -11,7 +11,7 @@ Writes a Julia value `val` into `io` using BSON format.
 function serialize end
 
 """
-    deserialize(doc::Union{BSON, Dict}, m::Module=Main)
+    deserialize(doc::Union{BSON, Dict})
 
 Decodes a BSON that was previously encoded using `BSONSerializer.serialize` method
 into a Julia value.
@@ -36,11 +36,11 @@ end
 # based on BSON.jl
 resolve_typepath(fs) = foldl((m, f) -> getfield(m, Symbol(f)), fs; init = Main)
 
-function deserialize(bson::Union{BSON, Dict}, m::Module=Main)
+function deserialize(bson::Union{BSON, Dict})
     @assert haskey(bson, "type") && haskey(bson, "args")
     datatype = resolve_typepath(bson["type"])
     @assert isa(datatype, DataType)
-    return deserialize(bson, Serializable{datatype}, m)
+    return deserialize(bson, Serializable{datatype})
 end
 
 """
@@ -57,8 +57,8 @@ function serialize(io::IO, val::T) where {T}
 	write(io, serialize(val))
 end
 
-function deserialize(io::IO, m::Module=Main)
-	return deserialize(read(io, BSON), m)
+function deserialize(io::IO)
+	return deserialize(read(io, BSON))
 end
 
 @BSONSerializable(Missing)
