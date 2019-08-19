@@ -33,9 +33,12 @@ function serialize(val::Serializable{T}) where {T}
     error("Call @BSONSerializable($T) to generate serialize code for $T.")
 end
 
+# based on BSON.jl
+resolve_typepath(fs) = foldl((m, f) -> getfield(m, Symbol(f)), fs; init = Main)
+
 function deserialize(bson::Union{BSON, Dict}, m::Module=Main)
     @assert haskey(bson, "type") && haskey(bson, "args")
-    datatype = m.eval(Meta.parse(bson["type"]))
+    datatype = resolve_typepath(bson["type"])
     @assert isa(datatype, DataType)
     return deserialize(bson, Serializable{datatype}, m)
 end

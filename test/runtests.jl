@@ -5,6 +5,9 @@ using Mongoc: BSON, BSONObjectId
 using BSONSerializer
 
 include("TestModule.jl")
+
+@test BSONSerializer.typepathref(TestModule.ChildType) == ["TestModule", "ChildType"]
+
 @BSONSerializable(TestModule.ChildType)
 @BSONSerializable(TestModule.FatherType)
 @BSONSerializable(TestModule.ManyDicts)
@@ -49,7 +52,7 @@ end
 
         bson = BSONSerializer.serialize(instance)
         #println(bson)
-        @test bson["type"] == "TestModule.ChildType"
+        @test bson["type"] == ["TestModule", "ChildType"]
         @test isa(bson["args"], Dict)
         args = bson["args"]
         @test args["c1"] == "Hello from ChildType"
@@ -93,13 +96,13 @@ end
 
         bson = BSONSerializer.serialize(father_instance)
         #println(bson)
-        @test bson["type"] == "TestModule.FatherType"
+        @test bson["type"] == ["TestModule", "FatherType"]
         args = bson["args"]
         @test args["f1"] == "Hello from father"
         @test isa(args["f2"], Dict)
         @test args["f3"] == [ 1, 2, 3 ]
         child_dict = args["f2"]
-        @test child_dict["type"] == "TestModule.ChildType"
+        @test child_dict["type"] == ["TestModule", "ChildType"]
         @test isa(child_dict["args"], Dict)
         child_args = child_dict["args"]
         @test child_args["c1"] == "hey"
@@ -196,7 +199,7 @@ end
         instance = TestModule.DateEncodedAsString(Date(2019,12,25))
         bson_with_str = BSON("""
 {
-    "type" : "TestModule.DateEncodedAsString",
+    "type" : ["TestModule", "DateEncodedAsString"],
     "args" : {
         "date" : "2019-12-25"
     }
@@ -215,7 +218,7 @@ end
     @testset "decode Int as Float" begin
         bson = BSON("""
 {
-    "type" : "TestModule.StructFloat",
+    "type" : ["TestModule","StructFloat"],
     "args" : {
         "val" : 10
     }
@@ -243,7 +246,7 @@ end
     @testset "UnionPeriods" begin
         instance = TestModule.UnionPeriods(Dates.Day(1))
         bson = BSONSerializer.serialize(instance)
-        @test bson["type"] == "TestModule.UnionPeriods"
+        @test bson["type"] == ["TestModule","UnionPeriods"]
         val = bson["args"]["val"]
         @test isa(val, Dict)
         @test haskey(val, "type")
