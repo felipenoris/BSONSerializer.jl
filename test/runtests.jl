@@ -8,8 +8,8 @@ include("TestModule.jl")
 
 @testset "Resolve" begin
     @test BSONSerializer.typepathref(TestModule.ChildType) == ["TestModule", "ChildType"]
-    @test BSONSerializer.resolve_typepath(BSONSerializer.typepathref(TestModule.ChildType)) == TestModule.ChildType
-    @test_throws MethodError BSONSerializer.resolve_typepath("heyyou")
+    @test BSONSerializer.resolve_typepath(BSONSerializer.typepathref(TestModule.ChildType), Main) == TestModule.ChildType
+    @test_throws MethodError BSONSerializer.resolve_typepath("heyyou", Main)
 end
 
 @BSONSerializable(TestModule.ChildType)
@@ -28,7 +28,7 @@ end
 @BSONSerializable(TestModule.Lift2)
 
 function encode_roundtrip(v::T) where {T}
-    BSONSerializer.decode(BSONSerializer.encode(v, T), T)
+    BSONSerializer.decode(BSONSerializer.encode(v, T), T, @__MODULE__)
 end
 
 @testset "encode" begin
