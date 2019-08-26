@@ -6,7 +6,11 @@ using BSONSerializer
 
 include("TestModule.jl")
 
-@test BSONSerializer.typepathref(TestModule.ChildType) == ["TestModule", "ChildType"]
+@testset "Resolve" begin
+    @test BSONSerializer.typepathref(TestModule.ChildType) == ["TestModule", "ChildType"]
+    @test BSONSerializer.resolve_typepath(BSONSerializer.typepathref(TestModule.ChildType)) == TestModule.ChildType
+    @test_throws MethodError BSONSerializer.resolve_typepath("heyyou")
+end
 
 @BSONSerializable(TestModule.ChildType)
 @BSONSerializable(TestModule.FatherType)

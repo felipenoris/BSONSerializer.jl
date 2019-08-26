@@ -34,7 +34,7 @@ function serialize(val::Serializable{T}) where {T}
 end
 
 # based on BSON.jl
-resolve_typepath(fs) = foldl((m, f) -> getfield(m, Symbol(f)), fs; init = Main)
+resolve_typepath(fs::Vector) = foldl((m, f) -> getfield(m, Symbol(f)), fs; init = Main)
 
 function deserialize(bson::Union{BSON, Dict})
     @assert haskey(bson, "type") && haskey(bson, "args")
