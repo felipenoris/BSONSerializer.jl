@@ -9,7 +9,7 @@ InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Mongoc = "4fe8b98c-fc19-5c23-8ec2-168ff83495f2"
 
 [compat]
-Mongoc = "0.4, 0.5"
+Mongoc = "0.4, 0.5, 0.6"
 julia = "1.1"
 
 [extras]
